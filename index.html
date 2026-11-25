@@ -1,0 +1,871 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>文獻書房</title>
+<style>
+/* 單機版基本重置 */
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px system-ui,sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* 版面：一間書房。上方工具列與搜尋；主體是書架，每篇論文是一本書；點書進入書頁，每個欄位旁都掛著原文頁碼。 */
+:root{
+  --bg:#eef1ee; --surface:#fff; --surface-2:#f5f8f6; --ink:#1b2420; --muted:#5c6a63; --line:#d4dbd6;
+  --accent:#1d5a48; --accent-ink:#fff; --accent-soft:#dbece4;
+  --gap:#9a5b0c; --gap-soft:#faefdb; --mine:#5b3f8c; --mine-soft:#ebe4f7;
+  --plank:#6b4f37; --plank-edge:#4c3725; --shelf-back:#e2e7e3;
+  --sci:#2c4a6e; --nat:#6e2c38;
+  --f-display:"Noto Serif TC",serif; --f-body:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141a17; --surface:#1c2420; --surface-2:#18201d; --ink:#e3eae6; --muted:#9aa8a1; --line:#2e3a34;
+  --accent:#6cc1a2; --accent-ink:#0f1a15; --accent-soft:#1f3a30;
+  --gap:#e3a54f; --gap-soft:#382b17; --mine:#b9a1e6; --mine-soft:#2b2340;
+  --plank:#5a4330; --plank-edge:#3a2b1e; --shelf-back:#1a221e;
+  --sci:#4a6f9e; --nat:#9e4a5a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a17; --surface:#1c2420; --surface-2:#18201d; --ink:#e3eae6; --muted:#9aa8a1; --line:#2e3a34;
+  --accent:#6cc1a2; --accent-ink:#0f1a15; --accent-soft:#1f3a30;
+  --gap:#e3a54f; --gap-soft:#382b17; --mine:#b9a1e6; --mine-soft:#2b2340;
+  --plank:#5a4330; --plank-edge:#3a2b1e; --shelf-back:#1a221e;
+  --sci:#4a6f9e; --nat:#9e4a5a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.68}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1140px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.38;margin:0}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding-block:11px}
+.brand{display:flex;align-items:baseline;gap:9px;background:none;border:0;padding:0;color:inherit}
+.brand b{font-family:var(--f-display);font-size:21px;letter-spacing:.07em}
+.brand span{font-size:12px;color:var(--muted)}
+.searchbox{flex:1 1 400px;min-width:0;display:flex;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);overflow:hidden}
+.searchbox select{border:0;background:transparent;padding:0 6px 0 11px;border-right:1px solid var(--line);color:var(--muted)}
+.searchbox input{flex:1;min-width:0;border:0;background:transparent;padding:9px 11px;outline:none}
+.searchbox button{border:0;background:var(--accent);color:var(--accent-ink);padding:0 15px;font-weight:500}
+.ghost-btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 13px;color:var(--muted)}
+.ghost-btn[aria-current="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.banner{background:var(--accent-soft);color:var(--accent);font-size:13px}
+.banner .wrap{padding-block:8px}
+main{padding-block:26px 70px}
+
+.intro{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px;margin-bottom:26px}
+.intro div{padding:11px 0 11px 13px;border-left:3px solid var(--accent);font-size:13.5px;color:var(--muted)}
+.intro strong{display:block;color:var(--ink);font-size:14.5px;margin-bottom:1px}
+
+.bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:16px;font-size:13.5px;color:var(--muted)}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:5px 11px;color:var(--muted);font-size:13.5px}
+.seg button[aria-current="true"]{background:var(--accent);color:var(--accent-ink)}
+
+.shelf{margin-bottom:26px}
+.shelf-head{display:flex;align-items:baseline;gap:9px;margin-bottom:7px}
+.shelf-head h2{font-size:17px}
+.shelf-head span{font-size:13px;color:var(--muted)}
+.shelf-body{background:var(--shelf-back);border-radius:4px 4px 0 0;padding:18px 16px 0;overflow-x:auto}
+.books{display:flex;align-items:flex-end;gap:7px;min-height:206px}
+.plank{height:13px;background:var(--plank);border-bottom:4px solid var(--plank-edge);border-radius:0 0 3px 3px}
+.book{position:relative;flex:0 0 auto;width:52px;border:0;border-radius:3px 3px 1px 1px;color:#f3f0e9;padding:11px 0 9px;
+ display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:7px;
+ box-shadow:inset 3px 0 0 rgba(255,255,255,.13),inset -4px 0 0 rgba(0,0,0,.2);transition:transform .18s ease}
+.book:hover,.book:focus-visible{transform:translateY(-9px)}
+.book .t{writing-mode:vertical-rl;font-size:12.5px;line-height:1.3;max-height:148px;overflow:hidden;font-family:var(--f-body)}
+.book .y{font-family:var(--f-mono);font-size:11px;opacity:.85}
+.book .band{position:absolute;left:0;right:0;top:19px;height:2px;background:rgba(255,255,255,.35)}
+
+.back{border:0;background:none;color:var(--accent);padding:0;margin-bottom:14px;font-size:14px}
+.paper{display:grid;grid-template-columns:minmax(0,1fr) 296px;gap:30px;align-items:start}
+@media (max-width:900px){.paper{grid-template-columns:1fr}}
+.ph{padding-bottom:17px;border-bottom:1px solid var(--line);margin-bottom:22px}
+.ph h1{font-size:clamp(20px,2.5vw,27px);margin:7px 0 13px}
+.jtag{display:inline-block;font-size:12px;padding:2px 9px;border-radius:4px;color:#fff}
+dl.meta{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 16px;font-size:14px;margin:0}
+dl.meta dt{color:var(--muted);white-space:nowrap}
+dl.meta dd{margin:0;min-width:0}
+.au{display:inline-flex;gap:5px;align-items:center;margin:0 9px 4px 0;border:0;background:none;padding:0;color:inherit}
+.au u{text-decoration:none;border-bottom:1px dotted var(--muted)}
+.au:hover u{color:var(--accent);border-color:var(--accent)}
+.role{font-size:11px;padding:0 6px;border-radius:3px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.role.c{background:var(--mine-soft);color:var(--mine)}
+section.blk{margin-bottom:30px}
+section.blk>h2{font-size:17.5px;margin-bottom:11px}
+.abs{max-width:66ch;font-size:14.5px}
+.kws{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.kw{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:2px 11px;font-size:13px;color:var(--muted)}
+.kw:hover{border-color:var(--accent);color:var(--accent)}
+.src{font-family:var(--f-mono);font-size:11.5px;border:1px solid var(--line);background:var(--surface-2);border-radius:4px;padding:1px 6px;color:var(--accent);white-space:nowrap;margin-left:6px;vertical-align:1px}
+.src:hover{border-color:var(--accent);background:var(--accent-soft)}
+.gap{display:inline-block;font-size:12.5px;background:var(--gap-soft);color:var(--gap);border-radius:4px;padding:1px 8px}
+
+.exp{background:var(--surface);border:1px solid var(--line);border-radius:8px;margin-bottom:13px;overflow:hidden}
+.exp-h{display:flex;flex-wrap:wrap;gap:7px 12px;align-items:baseline;justify-content:space-between;padding:12px 15px;border-bottom:1px solid var(--line)}
+.exp-h h3{font-size:15.5px}
+.exp-h .en{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.exp-b{padding:12px 15px;display:grid;gap:11px}
+.ani{display:flex;flex-wrap:wrap;gap:5px 18px;font-size:13.5px}
+.ani b{font-weight:500;color:var(--muted);margin-right:4px}
+table.cond{width:100%;border-collapse:collapse;font-size:13.5px}
+table.cond td{border-top:1px solid var(--line);padding:6px 8px 6px 0;vertical-align:top}
+table.cond td:first-child{color:var(--muted);width:36%}
+.res{background:var(--surface-2);border-radius:6px;padding:9px 12px;font-size:14px}
+.res b{display:block;font-size:11.5px;color:var(--muted);font-weight:500;margin-bottom:2px;letter-spacing:.06em}
+
+.refs{list-style:none;padding:0;margin:0;display:grid;gap:7px;font-size:14px}
+.refs li{padding-left:13px;border-left:2px solid var(--line)}
+.refs li.in{border-color:var(--accent)}
+.tagout{font-size:11.5px;color:var(--muted);border:1px dashed var(--line);border-radius:3px;padding:0 6px;margin-left:5px;white-space:nowrap}
+.tagin{font-size:11.5px;color:var(--accent);background:var(--accent-soft);border-radius:3px;padding:0 6px;margin-left:5px}
+
+aside.side{display:grid;gap:16px;align-content:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:13px 15px}
+.panel h3{font-size:14.5px;margin-bottom:9px}
+.note{border-left:3px solid var(--accent);padding:3px 0 3px 10px;margin-bottom:10px;font-size:13.5px}
+.note.mine{border-color:var(--mine)}
+.note .k{font-size:11.5px;color:var(--accent);display:block}
+.note.mine .k{color:var(--mine)}
+.nf{display:grid;gap:7px;margin-top:9px}
+.nf textarea{width:100%;min-height:58px;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--surface-2);resize:vertical;font-size:13.5px}
+.nf .row{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.nf select,.nf input{border:1px solid var(--line);border-radius:6px;padding:4px 7px;background:var(--surface-2);min-width:0;font-size:13px}
+.nf input{width:70px}
+.btn{border:0;background:var(--accent);color:var(--accent-ink);border-radius:6px;padding:6px 13px;font-weight:500;font-size:13.5px}
+.hint{font-size:12.5px;color:var(--muted)}
+
+.rh{margin-bottom:16px}
+.rh h1{font-size:21px;margin-top:4px}
+.tw{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:8px;margin-bottom:22px}
+table.cmp{border-collapse:collapse;width:100%;min-width:760px;font-size:13.5px}
+table.cmp th{text-align:left;font-weight:500;color:var(--muted);background:var(--surface-2);padding:9px 10px;border-bottom:1px solid var(--line);font-size:12.5px;white-space:nowrap}
+table.cmp td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.cmp tr:last-child td{border-bottom:0}
+table.cmp td ul{margin:0;padding-left:16px}
+mark{background:var(--gap-soft);color:inherit;padding:0 2px;border-radius:2px}
+.plist{display:grid;gap:9px}
+.prow{display:grid;grid-template-columns:7px minmax(0,1fr);gap:13px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:11px 14px 11px 0;text-align:left;width:100%;color:inherit}
+.prow .st{border-radius:0 3px 3px 0}
+.prow h3{font-size:15px;margin-bottom:2px}
+.prow p{margin:0;font-size:12.5px;color:var(--muted)}
+.prow:hover{border-color:var(--accent)}
+.empty{padding:26px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:8px}
+
+.figs{border-top:1px dashed var(--line);padding-top:10px}
+.figs>b{display:block;font-size:12px;color:var(--muted);font-weight:500;letter-spacing:.06em;margin-bottom:6px}
+.fig{display:grid;grid-template-columns:62px minmax(0,1fr) auto auto;gap:4px 10px;align-items:baseline;width:100%;text-align:left;
+  border:0;border-top:1px solid var(--line);background:none;padding:7px 0;color:inherit}
+.fig:first-of-type{border-top:0}
+.fig:hover{background:var(--surface-2)}
+.fig .fid{font-family:var(--f-mono);font-size:12.5px;color:var(--accent);font-weight:500}
+.fig .fd{font-size:13.5px;min-width:0}
+.fig .fty{display:flex;gap:4px;flex-wrap:wrap}
+.fig .fty i{font-style:normal;font-size:11px;border-radius:3px;padding:1px 6px;white-space:nowrap;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
+.t-mic{background:var(--mine-soft)!important;color:var(--mine)!important;border-color:transparent!important}
+.t-ephys{background:var(--accent-soft)!important;color:var(--accent)!important;border-color:transparent!important}
+.t-wb{background:var(--gap-soft)!important;color:var(--gap)!important;border-color:transparent!important}
+.fig .fp{font-size:11.5px;color:var(--muted)}
+@media (max-width:620px){.fig{grid-template-columns:58px minmax(0,1fr);}.fig .fty,.fig .fp{grid-column:2}}
+.figfilter{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.figfilter button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px;font-size:13px;color:var(--muted)}
+.figfilter button[aria-current="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.figgrp{margin-bottom:20px}
+.figgrp h3{font-size:15px;margin-bottom:3px}
+.figgrp>.hint{margin:0 0 8px}
+.figbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 14px 10px}
+.tier{border:1px solid var(--line);border-left:4px solid var(--line);background:var(--surface);border-radius:0 7px 7px 0;padding:11px 14px;margin-bottom:10px}
+.tier-A{border-left-color:var(--accent)}.tier-B{border-left-color:var(--accent)}
+.tier-C{border-left-color:var(--muted)}.tier-D{border-left-color:var(--mine)}
+.tier-h{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;margin-bottom:8px}
+.tier-h .lv{font-family:var(--f-mono);font-size:11px;background:var(--surface-2);border:1px solid var(--line);border-radius:3px;padding:0 6px;color:var(--muted)}
+.tier-D .lv{background:var(--mine-soft);color:var(--mine);border-color:var(--mine-soft)}
+.tier-h b{font-size:14.5px;font-weight:500}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:9px}
+.stats div{background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:9px 11px}
+.stats b{display:block;font-family:var(--f-mono);font-size:22px;line-height:1.2}
+.stats span{font-size:12.5px;color:var(--muted)}
+.cited{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:13px 15px;margin-bottom:11px}
+.cited .top{display:flex;flex-wrap:wrap;gap:7px 11px;align-items:baseline;margin-bottom:5px}
+.cnt{font-family:var(--f-mono);font-size:12.5px;background:var(--accent-soft);color:var(--accent);border-radius:4px;padding:1px 8px;white-space:nowrap}
+.cited .ttl{font-size:14.5px;margin-bottom:8px}
+.cited ul{margin:0;padding-left:17px;font-size:13.5px;color:var(--muted)}
+.cited ul li{margin-bottom:3px}
+.verdict{border:1px solid var(--line);border-radius:8px;padding:15px 17px;background:var(--surface);margin-bottom:18px}
+.verdict h3{font-size:16px;margin-bottom:7px}
+.pmrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:9px}
+.pmrow h3{font-size:14.5px;margin-bottom:3px}
+.pmrow .j{font-size:12.5px;color:var(--muted)}
+.pmrow .why{font-size:13px;margin-top:6px;padding-left:10px;border-left:2px solid var(--accent)}
+.pmrow a{color:var(--accent);font-family:var(--f-mono);font-size:12.5px;white-space:nowrap}
+.pmrow.have{border-color:var(--accent);background:var(--accent-soft)}
+.gw{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow-x:auto;margin-bottom:16px}
+.gw svg{display:block;min-width:700px;width:100%;height:auto}
+.gw text{font-family:var(--f-mono);font-size:11px;fill:var(--ink)}
+.gw .lbl{font-family:var(--f-body);font-size:12px}
+.gn{cursor:pointer}
+.gn:hover circle,.gn:focus circle{stroke:var(--ink);stroke-width:2.5}
+
+.overlay{position:fixed;inset:0;background:rgba(10,16,13,.5);z-index:20;display:flex;align-items:center;justify-content:center;
+ padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.modal{background:var(--surface);border-radius:10px;max-width:560px;width:100%;max-height:100%;overflow:auto;padding:19px 21px}
+.modal h2{font-size:17px;margin-bottom:5px}
+.modal .pg{font-family:var(--f-mono);font-size:13px;color:var(--accent);background:var(--accent-soft);border-radius:4px;padding:2px 8px;display:inline-block;margin-bottom:11px}
+.modal .box{background:var(--surface-2);border-left:3px solid var(--accent);padding:10px 13px;border-radius:0 6px 6px 0;font-size:14px;margin-bottom:11px}
+.modal .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:13px}
+.btn.g{background:transparent;color:var(--ink);border:1px solid var(--line)}
+@media (prefers-reduced-motion:reduce){.book{transition:none}}
+@media (max-width:640px){.brand span{display:none}.searchbox{flex-basis:100%}}
+</style>
+
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <button class="brand" id="brand" type="button"><b>文獻書房</b><span>只讀你上傳的 PDF</span></button>
+  <form class="searchbox" id="sf" role="search">
+    <select id="scope" aria-label="搜尋範圍">
+      <option value="all">全部</option><option value="exp">實驗</option><option value="cond">實驗條件</option>
+      <option value="author">作者</option><option value="journal">期刊</option><option value="kw">關鍵字</option><option value="fig">圖</option>
+    </select>
+    <input id="q" type="search" placeholder="試試：sleep deprivation、Morris water maze、螢光、Diba" autocomplete="off">
+    <button type="submit">搜尋</button>
+  </form>
+  <button class="ghost-btn" id="fbtn" type="button">圖目錄</button>
+  <button class="ghost-btn" id="gbtn" type="button">關聯圖</button>
+  <button class="ghost-btn" id="pbtn" type="button">PubMed</button>
+</div></header>
+<div class="banner"><div class="wrap">書架上的 2 本書，是從你給的兩個 PDF 讀出來的。每個欄位後面的頁碼，就是它在原文的位置。</div></div>
+
+<main class="wrap" id="app"></main>
+<div class="overlay" id="ov" hidden><div class="modal" id="md" role="dialog" aria-modal="true"></div></div>
+
+<script>
+const J={sci:{n:"Science",c:"var(--sci)"},nat:{n:"Nature",c:"var(--nat)"}};
+const P=[
+{id:"a",j:"sci",color:"var(--sci)",
+ title:"REM sleep-active MCH neurons are involved in forgetting hippocampus-dependent memories",
+ zh:"REM 睡眠期活化的 MCH 神經元參與海馬迴依賴記憶的遺忘",
+ journal:"Science",cite:"365(6459):1308–1313",year:2019,date:"2019-09-20",doi:"10.1126/science.aax9238",jp:1,
+ species:"小鼠",topic:"睡眠期的主動遺忘",
+ authors:[["Shuntaro Izawa",["第一作者"]],["Srikanta Chowdhury",[]],["Toh Miyazaki",[]],["Yasutaka Mukai",[]],["Daisuke Ono",[]],["Ryo Inoue",[]],["Yu Ohmura",[]],["Hiroyuki Mizoguchi",[]],["Kazuhiro Kimura",[]],["Mitsuhiro Yoshioka",[]],["Akira Terao",[]],["Thomas S. Kilduff",[]],["Akihiro Yamanaka",["通訊作者"]]],ap:1,
+ affil:"名古屋大學環境醫學研究所、北海道大學、東海大學、SRI International",
+ abs:"下視丘的 MCH 神經元在 REM 睡眠期活化，會主動促成遺忘。MCH 神經元密集投射到背側海馬迴；活化它們會損害、抑制它們會改善海馬迴依賴的記憶。在腦片上活化 MCH 末梢，會經由增加抑制性輸入而降低海馬迴錐體細胞的放電。清醒期活化與 REM 期活化的 MCH 神經元是兩群不同的細胞。",
+ absNote:"這段是摘要的中文整理，不是原文翻譯；原文摘要在第 1 頁。",
+ kws:["MCH neuron","REM sleep","forgetting","hippocampus","chemogenetics","optogenetics","Memory","Sleep, REM","Hypothalamic Hormones","Pyramidal Cells"],
+ pmid:"31604241",
+ kwT:[
+  {lv:"A",n:"論文自己標的關鍵字",src:"PDF 的關鍵字欄位",items:[],none:"這份 PDF 沒有關鍵字欄位。NIH author manuscript 版常常把它拿掉了，所以這一層是空的。"},
+  {lv:"B",n:"標題與摘要裡出現過的詞",src:"PDF 第 1 頁，可逐字核對",items:["melanin-concentrating hormone (MCH)","REM sleep","forgetting","hippocampus-dependent memory","hypothalamus","inhibitory inputs"]},
+  {lv:"C",n:"全文高頻術語",src:"統計 PDF 全文，附出現次數",items:["MCH ×28","hippocampus ×23","REM sleep ×19","memory ×17","optogenetic ×8","NOR ×7"]},
+  {lv:"D",n:"PubMed 的 MeSH 標引詞",src:"PubMed PMID 31604241，由 NLM 標引員指定",items:["Memory ★","Sleep, REM ★","Hippocampus","Hypothalamic Hormones","Melanins","Pituitary Hormones","Pyramidal Cells","Mice, Transgenic","Mice, Inbred C57BL","Male","Behavior, Animal","In Vitro Techniques"],
+   note:"★ 是 NLM 標的主要主題。注意 MeSH 裡有「Male」—— 這篇 PDF 正文沒寫性別，但 NLM 標引員看得到補充資料。這是另一個來源給的線索，不是從你的 PDF 讀到的，所以放在這一層、不會自動填進上面的實驗表格。"}],
+ exps:[
+  {n:"逆行示蹤",en:"retrobead tracing",p:2,
+   ani:[["動物","小鼠"],["隻數","正文未提供"],["年齡","正文未提供"]],
+   cond:[["注射物","retrobeads（逆行珠）"],["注射位置","海馬迴 CA1，雙側"]],
+   res:"下視丘有逆行標記陽性的神經元；免疫組織化學顯示 MCH 神經元密集投射到海馬迴。",rp:2},
+  {n:"化學遺傳活化",en:"chemogenetic activation (hM3Dq)",p:2,
+   ani:[["動物","MCH-Cre 小鼠"],["隻數","正文未提供"],["年齡","正文未提供"]],
+   cond:[["病毒","AAV9-CAG-FLEX-hM3Dq-mCherry"],["藥物","CNO（clozapine-N-oxide）"],["給藥時機","記憶習得（Phase I）之後"],["行為測試","NOR、CFC"]],
+   res:"注射 CNO 的小鼠 NOR 記憶明顯變差；CFC 的 freezing 比率下降。對照實驗確認 CNO 本身沒有影響。",rp:2},
+  {n:"新物體辨識",en:"novel object recognition (NOR)",p:8,
+   ani:[["動物","小鼠"],["隻數","正文未提供（見 Table S1）"],["年齡","正文未提供"]],
+   cond:[["保留期（活化組）","1.5 小時"],["保留期（抑制組）","3 小時"],["保留期（清除組）","最長 48 小時"],["條件設定出處","Fig. S5、Table S2、S3"]],
+   res:"活化 MCH 神經元使記憶變差；抑制或清除使記憶變好。",rp:3},
+  {n:"情境恐懼制約",en:"contextual fear conditioning (CFC)",p:8,
+   ani:[["動物","小鼠"],["隻數","正文未提供"],["年齡","正文未提供"]],
+   cond:[["電擊強度（活化組）","強電擊"],["電擊強度（抑制組）","弱電擊"],["指標","freezing 比率"]],
+   res:"活化降低 freezing；清除 MCH 神經元提高 freezing。但 cued fear（杏仁核依賴）沒有改善。",rp:3},
+  {n:"Morris 水迷宮",en:"Morris water maze",p:3,
+   ani:[["動物","MCH 神經元清除小鼠 MCHN(−)"],["隻數","正文未提供"],["年齡","正文未提供"]],
+   cond:[["訓練天數","7 天"],["平台位置","A1 象限"],["指標","到達平台的潛伏期"],["水溫 / 水池大小","正文未提供"]],
+   res:"MCHN(−) 到達平台的潛伏期明顯較短，空間記憶改善。",rp:3},
+  {n:"MCH 神經元清除",en:"DTA ablation (tet-off)",p:3,
+   ani:[["動物","MCH-tTA 小鼠"],["隻數","正文未提供"],["年齡","正文未提供"]],
+   cond:[["方式","tet-off 系統表現白喉毒素 A 片段（DTA）"],["觸發","飲食中移除 doxycycline（DOX）"],["對照組","持續餵食含 DOX 飼料 MCHN(+)"]],
+   res:"幾乎所有 pro-MCH mRNA 陽性神經元都被清除；焦慮行為不受影響。",rp:3},
+  {n:"光遺傳活化",en:"optogenetic activation (ChR2)",p:3,
+   ani:[["動物","MCH-tTA; TetO ChR2 小鼠"],["隻數","正文未提供"],["年齡","正文未提供"]],
+   cond:[["刺激方式","無線照光（teleopto）"],["刺激時段","encoding / retention / retrieval 分開測試"],["補充對照","retention 內不同的 10 分鐘時段"]],
+   res:"只有在保留期（retention）照光會損害 NOR 與 CFC 記憶；encoding 或 retrieval 期間照光沒有影響。",rp:3},
+  {n:"腦片膜片鉗",en:"patch clamp + terminal photostimulation",p:3,
+   ani:[["動物","小鼠腦片"],["細胞數","正文未提供"],["年齡","正文未提供"]],
+   cond:[["記錄細胞","海馬迴 CA1 錐體神經元"],["刺激","藍光刺激 MCH 神經末梢"],["對照","綠光"]],
+   res:"藍光降低錐體細胞放電頻率，同時 IPSC 的頻率與振幅大幅上升，顯示 GABA 抑制性輸入增強。",rp:3},
+  {n:"纖維光度法",en:"fiber photometry (GCaMP6)",p:4,
+   ani:[["動物","MCH-tTA 小鼠"],["隻數","正文未提供"],["年齡","正文未提供"]],
+   cond:[["病毒","AAV9-TetO-GCaMP6"],["光纖位置","外側下視丘 LHA"],["同步記錄","EEG、EMG"]],
+   res:"MCH 神經元在清醒期活性中等，REM 睡眠期上升；NREM→REM 與 NREM→清醒的轉換時顯著增加，REM→清醒時下降。",rp:4},
+  {n:"微內視鏡單細胞鈣影像",en:"microendoscopy (GCaMP6f)",p:4,
+   ani:[["動物","MCH-Cre 小鼠"],["細胞數","146 個細胞"],["隻數","6 隻"],["年齡","正文未提供"]],
+   cond:[["病毒","AAV9-CMV-FLEX-GCaMP6f"],["鏡頭","GRIN lens"],["分析","Z-score 積分"]],
+   res:"34.9% 只在清醒期有鈣事件、52.8% 只在 REM 期、12.3% 兩者都有；三群細胞在 LHA 隨機散布。",rp:4},
+  {n:"狀態依賴光遺傳抑制",en:"state-dependent optogenetic inhibition (ArchT)",p:4,
+   ani:[["動物","MCH-tTA 小鼠"],["隻數","正文未提供"],["年齡","正文未提供"]],
+   cond:[["病毒","AAV9-TetO-ArchT"],["狀態判讀","即時分析 EEG、EMG、活動量的決策樹"],["照光涵蓋率（清醒）","94.8 ± 0.7%"],["照光涵蓋率（REM）","83.6 ± 4.0%"],["照光涵蓋率（NREM）","93.7 ± 0.9%"],["對照","yoked control、EGFP 組"]],
+   res:"只有在 REM 期抑制 MCH 神經元會改善記憶；在清醒期或 NREM 期抑制沒有效果。",rp:4}],
+ disc:"作者認為 REM 期活化的 MCH 神經元負責遺忘，而清醒期活化的那群可能跟進食行為有關。可能機制包括 CART 共表現、麩胺酸經由 GABA 中間神經元造成前饋抑制。作者也指出 REM 睡眠在記憶中的角色仍有爭議，鞏固與遺忘的機制可能同時存在。",dp:5,
+ refStat:{total:31,parsed:28,pmid:24,fail:[5,8,29],style:"括號數字，例如 (17)",ok:true,
+   styleNote:"引用寫成 (17)、(12–16) 這種括號形式，和內文其他數字不會混淆，所以「哪一條在哪裡被引用」可以可靠地算出來。"},
+ topCited:[
+  {n:15,c:3,pg:[2,3],pmid:"24828644",t:"Tsunematsu T et al. (2014) Optogenetic manipulation of activity and temporally controlled cell-specific ablation reveal a role for MCH neurons in sleep/wake regulation. J Neurosci 34:6896–6909",
+   why:["p.2 講 MCH 神經元活化會增加 REM、抑制會減少進入 REM 的轉換時","p.3 講用 tet-off 系統表現白喉毒素 A 片段來清除細胞時"],
+   note:"被引 3 次、而且是方法來源 —— 這篇的兩個核心工具（基因小鼠、清除手法）都出自這裡。要重現這篇實驗，這條要先讀。"},
+  {n:4,c:2,pg:[2,5],pmid:"28092659",t:"Li W, Ma L, Yang G, Gan WB (2017) REM sleep selectively prunes and maintains new synapses in development and learning. Nat Neurosci 20:427–437",
+   why:["p.2 講遺忘是經由突觸重新正規化移除多餘記憶時","p.5 講 REM 睡眠經由 GABA 中間神經元造成負向記憶調節時"]},
+  {n:6,c:2,pg:[2,5],pmid:"28154077",t:"Diering GH et al. (2017) Homer1a drives homeostatic scaling-down of excitatory synapses during sleep. Science 355:511–515",
+   why:["p.2 同樣在講突觸重新正規化時","p.5 講代謝型麩胺酸受體參與睡眠期主動遺忘時"]},
+  {n:28,c:1,pg:[5],pmid:"22998869",t:"Grosmark AD, Mizuseki K, Pastalkova E, Diba K, Buzsáki G (2012) REM sleep reorganizes hippocampal excitability. Neuron 75:1001–1007",
+   why:["p.5 討論中，列舉支持「REM 睡眠負責遺忘」的證據時"],
+   note:"這條的共同作者 Diba K，就是另一本書的通訊作者。這是兩本書之間唯一查得到的連結。"},
+  {n:1,c:1,pg:[2],pmid:"6866101",t:"Crick F, Mitchison G (1983) The function of dream sleep. Nature 304:111–114",
+   why:["p.2 開頭，講記憶在睡眠期會被篩選成鞏固或遺忘時"],
+   note:"最老的一條（1983）。被引 1 次，位置在開場白 —— 典型的「奠基文獻」用法，不是方法來源。"}],
+ refNote:"31 條都不在你的書庫裡，所以系統不會替它們建書。"},
+
+{id:"b",j:"nat",color:"var(--nat)",
+ title:"Sleep loss diminishes hippocampal reactivation and replay",
+ zh:"睡眠不足會減少海馬迴的再活化與重播",
+ journal:"Nature",cite:"630(8018):935–942",year:2024,date:"2024-06",doi:"10.1038/s41586-024-07538-2",jp:1,
+ species:"大鼠",topic:"睡眠剝奪對記憶再活化的影響",
+ authors:[["Bapun Giri",["共同第一作者"]],["Nathaniel Kinsky",["共同第一作者"]],["Utku Kaya",[]],["Kourosh Maboudi",[]],["Ted Abel",[]],["Kamran Diba",["通訊作者"]]],ap:1,
+ affil:"密西根大學醫學院麻醉學系、威斯康辛大學密爾瓦基分校、愛荷華大學",
+ abs:"在大鼠身上連續記錄約 12 小時的 CA1 活動，涵蓋迷宮探索、睡眠與睡眠剝奪後的恢復睡眠。睡眠剝奪期間 sharp-wave ripple（SWR）數量沒有減少甚至更多，但功率較低、頻率較高。雖然 SWR 很多、錐體細胞放電也維持，再活化與重播卻明顯減少，有些情況完全消失。恢復睡眠時再活化只部分回升，始終沒有回到自然睡眠的水準。",
+ absNote:"這段是摘要的中文整理，不是原文翻譯；原文摘要在第 1 頁。",
+ kws:["sharp-wave ripple","replay","reactivation","sleep deprivation","CA1","explained variance","Sleep Deprivation","Maze Learning","Rats, Long-Evans","Memory"],
+ pmid:"38867049",preprint:{pmid:"36824950",src:"Res Sq",date:"2023-02-16",doi:"10.21203/rs.3.rs-2540186/v1"},
+ kwT:[
+  {lv:"A",n:"論文自己標的關鍵字",src:"PDF 的關鍵字欄位",items:[],none:"這份 PDF 也沒有關鍵字欄位，這一層是空的。"},
+  {lv:"B",n:"標題與摘要裡出現過的詞",src:"PDF 第 1 頁，可逐字核對",items:["sleep loss","hippocampal reactivation","replay","sharp-wave ripples (SWRs)","sleep deprivation","recovery sleep","CA1","pyramidal cells"]},
+  {lv:"C",n:"全文高頻術語",src:"統計 PDF 全文，附出現次數",items:["ripple ×60+","reactivation ×25","replay ×22","sleep deprivation ×18","NREM ×15","explained variance ×8"]},
+  {lv:"D",n:"PubMed 的 MeSH 標引詞",src:"PubMed PMID 38867049，由 NLM 標引員指定",items:["Sleep Deprivation ★","Sleep, Slow-Wave ★","Hippocampus ★","CA1 Region, Hippocampal","Maze Learning","Memory","Pyramidal Cells","Rats, Long-Evans","Female","Male","Wakefulness","Time Factors"],
+   note:"★ 是主要主題。這裡 MeSH 跟 PDF 對得上：Rats, Long-Evans、Female、Male 都和正文第 9 頁寫的 4 公 3 母 Long-Evans 大鼠一致。兩個來源互相印證，比只有一個來源可靠。"}],
+ exps:[
+  {n:"長時間電生理記錄",en:"chronic silicon probe recording",p:9,
+   ani:[["動物","Long-Evans 大鼠"],["隻數","7 隻（4 公、3 母）"],["體重","300–500 公克"],["年齡","正文未提供，只給體重"]],
+   cond:[["探針","128 通道 8 shank（6 隻）／64 通道 8 shank（1 隻）"],["植入位置","背側海馬迴 CA1"],["座標","AP −3.36，ML ±2.2"],["取樣率","30 kHz"],["LFP 降頻","1250 Hz"],["位置追蹤","Optitrack，60 或 120 Hz"]],
+   res:"共分出 754 個錐體細胞與 96 個中間神經元。",rp:2},
+  {n:"迷宮探索",en:"novel linear maze (MAZE)",p:2,
+   ani:[["動物","Long-Evans 大鼠"],["隻數","7 隻"],["年齡","正文未提供"]],
+   cond:[["迷宮","沒走過的新線性迷宮，形狀、顏色、材質各異"],["時間","約 1 小時"],["獎勵","兩端水井交替取水"],["PRE","回到家籠約 2.5 小時休息／睡眠"],["POST","≥ 10 小時"]],
+   res:"動物在迷宮兩端水井之間交替跑動取得水獎勵。",rp:10},
+  {n:"睡眠剝奪",en:"sleep deprivation (gentle handling)",p:10,
+   ani:[["動物","Long-Evans 大鼠"],["場次","SD 8 場／7 隻動物；NSD 7 場／6 隻動物"],["年齡","正文未提供"]],
+   cond:[["方式","gentle handling（輕柔處理）"],["時長","5 小時"],["起始時間","光照期開始（ZT 0）"],["手法","輕聲響、輕敲或輕搖籠子；壓力上升後改用軟毛刷輕撫或翻動墊料"],["後續間隔","剝奪後讓動物恢復 48 小時才做下一次實驗"],["分組設計","同一批動物在不同天以偽隨機順序做 SD 與 NSD，間隔 > 24 小時"]],
+   res:"SD 期間看不到明顯的 delta 或 theta 優勢；恢復睡眠時 delta 活性強烈反彈。",rp:3},
+  {n:"SWR 偵測",en:"sharp-wave ripple detection",p:11,
+   ani:[["資料","7 隻大鼠的 CA1 LFP"],["年齡","正文未提供"]],
+   cond:[["頻帶","125–250 Hz"],["平滑","高斯核 σ = 12.5 毫秒"],["偵測門檻","超過 2.5 個標準差"],["起訖判定","訊號 > 0.5 標準差"],["排除","< 50 毫秒或 > 450 毫秒"],["sharp wave 振幅","2–30 Hz 帶通後取最大最小差值"],["峰值頻率","Morlet 小波轉換，100–250 Hz"]],
+   res:"自然睡眠中 ripple 發生率隨時間下降（NS1 中位數 0.57 Hz → NS2 0.46 Hz，P = 1.86×10⁻³）；睡眠剝奪期間維持高檔（SD1 0.5 Hz → SD2 0.57 Hz，P = 0.73），且 SD2 高於 NS2（P = 1.08×10⁻³）。",rp:3},
+  {n:"睡眠分期",en:"sleep scoring",p:11,
+   ani:[["資料","全部記錄場次"],["年齡","正文未提供"]],
+   cond:[["EMG 替代訊號","各通道兩兩相關，10 秒視窗、1 秒步長"],["theta 頻帶","5–10 Hz"],["delta 頻帶","1–4 Hz"],["分期方法","theta/(delta+10–14 Hz) 比值 + 隱馬可夫模型 + 目視檢查"],["分期解析度","1 秒"]],
+   res:"高 theta 的睡眠期判為 REM，其餘為 NREM；清醒期再分為 active 與 quiet。",rp:11},
+  {n:"再活化分析",en:"reactivation / explained variance (EV)",p:12,
+   ani:[["納入場次","13／16 場，來自 6／7 隻動物"],["納入條件","該場次需有 > 15 個穩定單元"]],
+   cond:[["時間 bin","250 毫秒"],["滑動視窗","15 分鐘"],["步長","5 分鐘"],["細胞對篩選","波形相似度 < 0.8"],["對照（機率水準）","時間反轉的 EV（REV）"],["衰減常數","以指數函數擬合"],["穩定性標準","把每場切成 5 等分，任一段低於整體平均 25% 的單元剔除"]],
+   res:"自然睡眠的再活化可持續數小時；睡眠剝奪期間，7 場中有 4 場幾乎沒有再活化，另外 3 場雖有但衰減更快。恢復睡眠時再活化回升，但仍明顯低於自然睡眠。",rp:6},
+  {n:"軌跡重播分析",en:"Bayesian decoding / trajectory replay",p:13,
+   ani:[["納入場次","13／16 場，來自 6／7 隻動物"]],
+   cond:[["解碼 bin","20 毫秒"],["候選事件條件 1","≥ 5 個活躍單元"],["候選事件條件 2","移動速度 < 8 公分/秒"],["候選事件條件 3","ripple 功率峰值 > 1 標準差"],["事件長度","排除 < 80 毫秒或 > 500 毫秒"],["判定為軌跡重播","相鄰 bin 的跳躍距離 < 40 公分，且連續 ≥ 60 毫秒"]],
+   res:"軌跡重播比例在睡眠剝奪期間明顯下降（SD1 平均 0.21 → SD2 0.018，P = 0.024），SD2 也低於自然睡眠的 NS2（0.26，P = 4.02×10⁻⁴）；恢復睡眠沒有回升（RS 0.016 vs NS1 0.027，P = 1.98×10⁻⁴）。",rp:7},
+  {n:"位置野計算",en:"place field calculation",p:13,
+   ani:[["資料","迷宮期間的單元活動"]],
+   cond:[["空間 bin","2 公分"],["平滑","高斯核 σ = 4 公分"],["納入速度","> 8 公分/秒"],["排除","峰值放電率 < 0.5 Hz 的神經元"],["線性化","ISOMAP + 目視檢查"]],
+   res:"每個神經元依兩個跑動方向各算一張放電率地圖。",rp:13},
+  {n:"階層式拔靴法",en:"hierarchical bootstrapping",p:14,
+   ani:[["資料","各項指標"]],
+   cond:[["重抽次數","10000 次"],["重抽層級","先場次，再場次內的測量值"],["組內檢定","雙尾，α = 0.05"],["跨組檢定","單尾，α = 0.05"],["多重比較校正","未做校正（原文明述）"]],
+   res:"所有以拔靴法得到的資料以盒鬚圖呈現，鬚線為 1.5 倍四分位距。",rp:14}],
+ disc:"作者認為睡眠剝奪時 SWR 的功率較低、頻率較高，這些特徵可當成睡眠壓力的指標，而且在清醒與睡眠都量得到，與只能在睡眠期量的皮質慢波不同。最重要的是：再活化在恢復睡眠後並沒有完全回補，而多數腦部指標（蛋白質訊號、基因轉錄）在補足睡眠後會回到正常。作者主張真正關鍵的是再活化與重播本身，而不只是 SWR 有沒有發生。",dp:8,
+ refStat:{total:77,parsed:71,pmid:63,fail:[4,26,40,49,71,74],style:"上標數字，例如 memory⁵,⁶",ok:false,
+   styleNote:"引用是上標數字，抽成純文字之後會和統計數字混在一起 —— 「0.57 Hz」會被讀成引用第 57 條。所以這篇的引用位置只能保守抓，寧可漏也不要錯。"},
+ topCited:[
+  {n:8,c:6,pg:[2,6,8,9],pmid:"35561219",t:"Nitzan N, Swanson R, Schmitz D & Buzsáki G (2022) Brain-wide interactions during hippocampal sharp wave ripples. PNAS 119:e2200931119",
+   why:["p.2 講 SWR 會在整個海馬結構引發強烈放電時","p.6 講再活化會把海馬訊號廣播到皮質時","p.8 討論「較小的 sharp wave 不一定代表目標區反應較弱」時","p.9 結尾講 SWR 是海馬與其他腦區溝通的特權窗口時"],
+   note:"全篇被引最多的一條。從引言一路用到結論，是這篇論證的骨幹。"},
+  {n:17,c:5,pg:[2,3,4,9],pmid:"29439023",t:"Norimoto H et al. (2018) Hippocampal ripples down-regulate synapses. Science 359:1524–1527",
+   why:["p.2 講突觸減弱（depotentiation / LTD）也和 SWR 有關時","p.3 講 ripple 發生率有恆定調節作用時","p.9 討論 SWR 可能是用來下調突觸時"]},
+  {n:2,c:5,pg:[6,7,8],pmid:null,t:"Buzsáki G. Hippocampal sharp wave-ripple: A cognitive biomarker for episodic memory and planning",
+   why:["p.6 講神經集群的再活化與海馬記憶功能的關聯時","p.7 講 SWR 期間的放電可以壓縮重播迷宮序列時","p.8 討論 CA3 輸入同步性時"]},
+  {n:1,c:4,pg:[1,3],pmid:"23589831",t:"Rasch B & Born J (2013) About sleep's role in memory. Physiol Rev 93:681–766",
+   why:["p.1 摘要第一句「記憶受益於睡眠」時","p.3 講睡眠的恆定效應時"],
+   note:"摘要第一句就引用的綜述。典型的「領域共識」用法。"},
+  {n:35,c:3,pg:[4,6,9],pmid:null,t:"Giri B, Miyawaki H, Mizuseki K, Cheng S & Diba K. Hippocampal reactivation extends for several hours following novel experience",
+   why:["p.6 講再活化在新經驗後可持續數小時時","p.9 結論說「與我們先前的報告一致」時"],
+   note:"作者自己的前作（第一作者 Giri、通訊作者 Diba 都是同一批人）。這篇等於是它的續集。"}],
+ refNote:"77 條都不在你的書庫裡，所以系統不會替它們建書。"}
+];
+
+// 圖的分類。類型是從圖說文字判讀的，標示為系統判讀。
+const FT={mic:"顯微鏡／螢光圖",ephys:"電生理紀錄",bar:"長條圖／盒鬚圖",line:"折線圖",heat:"熱圖",traj:"軌跡圖",venn:"文氏圖",flow:"流程／示意圖",wb:"西方墨點 band"};
+const FIGS=[
+// ---- 論文 a：Science 2019 ----
+{pid:"a",id:"1A",fig:1,p:8,ty:["mic"],d:"六個腦區的逆行標記陽性神經元",ex:"逆行示蹤"},
+{pid:"a",id:"1B",fig:1,p:8,ty:["mic"],d:"下視丘的逆行標記陽性神經元",ex:"逆行示蹤"},
+{pid:"a",id:"1C",fig:1,p:8,ty:["mic"],d:"海馬迴中的 MCH 與 orexin 神經末梢",ex:"逆行示蹤"},
+{pid:"a",id:"1D",fig:1,p:8,ty:["mic","ephys"],d:"hM3Dq-mCherry 表現與功能的組織化學確認",ex:"化學遺傳活化"},
+{pid:"a",id:"1E",fig:1,p:8,ty:["bar","heat"],d:"NOR 測試（保留期 1.5 小時）；熱圖為停留在物體附近的時間",ex:"新物體辨識"},
+{pid:"a",id:"1F",fig:1,p:8,ty:["bar"],d:"CFC 測試（強電擊）",ex:"情境恐懼制約"},
+{pid:"a",id:"1G",fig:1,p:8,ty:["mic"],d:"hM4Di 表現的組織化學確認",ex:"化學遺傳活化"},
+{pid:"a",id:"1H",fig:1,p:8,ty:["bar"],d:"NOR 測試（保留期 3 小時）",ex:"新物體辨識"},
+{pid:"a",id:"1I",fig:1,p:8,ty:["bar"],d:"CFC 測試（弱電擊）",ex:"情境恐懼制約"},
+{pid:"a",id:"1J",fig:1,p:8,ty:["flow","mic"],d:"清除流程圖，以及 MCH 神經元專一性清除的組織化學確認",ex:"MCH 神經元清除"},
+{pid:"a",id:"1K",fig:1,p:8,ty:["bar"],d:"不同保留期的 NOR 測試",ex:"新物體辨識"},
+{pid:"a",id:"1L",fig:1,p:8,ty:["bar"],d:"CFC 測試",ex:"情境恐懼制約"},
+{pid:"a",id:"1M",fig:1,p:8,ty:["bar"],d:"cued fear 測試（杏仁核依賴，未改善）",ex:"情境恐懼制約"},
+{pid:"a",id:"1N",fig:1,p:8,ty:["line","traj","bar","heat"],d:"水迷宮流程（平台在 A1 象限）與 7 天表現；內插圖為第 7 天軌跡；長條圖為探索測試結果",ex:"Morris 水迷宮"},
+{pid:"a",id:"2A",fig:2,p:10,ty:["flow"],d:"teleopto 無線刺激示意",ex:"光遺傳活化"},
+{pid:"a",id:"2B",fig:2,p:10,ty:["bar","heat"],d:"光遺傳活化下的 NOR 測試",ex:"光遺傳活化"},
+{pid:"a",id:"2C",fig:2,p:10,ty:["bar"],d:"光遺傳活化下的 CFC 測試",ex:"光遺傳活化"},
+{pid:"a",id:"2D",fig:2,p:10,ty:["ephys","mic"],d:"海馬迴錐體神經元的電流鉗紀錄（biocytin 標記）",ex:"腦片膜片鉗"},
+{pid:"a",id:"2E",fig:2,p:10,ty:["ephys","mic"],d:"同上，另一組紀錄",ex:"腦片膜片鉗"},
+{pid:"a",id:"2F",fig:2,p:10,ty:["bar"],d:"藍光／綠光下的膜電位",ex:"腦片膜片鉗"},
+{pid:"a",id:"2G",fig:2,p:10,ty:["bar"],d:"藍光／綠光下的放電頻率",ex:"腦片膜片鉗"},
+{pid:"a",id:"2H",fig:2,p:10,ty:["ephys"],d:"活化 MCH 末梢後的 IPSC",ex:"腦片膜片鉗"},
+{pid:"a",id:"2I",fig:2,p:10,ty:["bar"],d:"IPSC 事件數",ex:"腦片膜片鉗"},
+{pid:"a",id:"2J",fig:2,p:10,ty:["bar"],d:"IPSC 振幅",ex:"腦片膜片鉗"},
+{pid:"a",id:"2K",fig:2,p:10,ty:["flow"],d:"海馬迴內 MCH 末梢的 teleopto 刺激示意",ex:"光遺傳活化"},
+{pid:"a",id:"2L",fig:2,p:10,ty:["bar","heat"],d:"刺激 MCH 末梢的 NOR 測試",ex:"光遺傳活化"},
+{pid:"a",id:"2M",fig:2,p:10,ty:["bar"],d:"刺激 MCH 末梢的 CFC 測試",ex:"光遺傳活化"},
+{pid:"a",id:"3A",fig:3,p:11,ty:["mic","flow"],d:"GCaMP6 在 MCH 神經元的專一表現，與 EEG／EMG 同步的纖維光度法配置",ex:"纖維光度法"},
+{pid:"a",id:"3B",fig:3,p:11,ty:["ephys"],d:"各警醒狀態下的 MCH 神經元活性",ex:"纖維光度法"},
+{pid:"a",id:"3C",fig:3,p:11,ty:["ephys"],d:"對齊狀態轉換的 GCaMP6 訊號（平均綠線、個別灰線）",ex:"纖維光度法"},
+{pid:"a",id:"3D",fig:3,p:11,ty:["bar"],d:"狀態轉換的統計摘要",ex:"纖維光度法"},
+{pid:"a",id:"3E",fig:3,p:11,ty:["mic"],d:"GCaMP6f 表現的組織化學確認（虛線框為 GRIN lens）",ex:"微內視鏡單細胞鈣影像"},
+{pid:"a",id:"3F",fig:3,p:11,ty:["ephys"],d:"三型 MCH 神經元的鈣活性",ex:"微內視鏡單細胞鈣影像"},
+{pid:"a",id:"3G",fig:3,p:11,ty:["bar"],d:"各型細胞在各狀態下的鈣瞬變次數",ex:"微內視鏡單細胞鈣影像"},
+{pid:"a",id:"3H",fig:3,p:11,ty:["venn"],d:"三型 MCH 細胞的文氏圖摘要（34.9%／52.8%／12.3%）",ex:"微內視鏡單細胞鈣影像"},
+{pid:"a",id:"3I",fig:3,p:11,ty:["mic"],d:"MCH 神經元分布的微內視鏡影像",ex:"微內視鏡單細胞鈣影像"},
+{pid:"a",id:"3J",fig:3,p:11,ty:["heat"],d:"個別 MCH 細胞活性的色碼圖",ex:"微內視鏡單細胞鈣影像"},
+{pid:"a",id:"4A",fig:4,p:12,ty:["bar","heat"],d:"MCHN(−) 與 MCHN(+) 在無保留期與新奇誘發睡眠剝奪下的 NOR",ex:"MCH 神經元清除"},
+{pid:"a",id:"4B",fig:4,p:12,ty:["mic"],d:"ArchT-EGFP 表現的組織化學確認（虛線框為光纖疤痕）",ex:"狀態依賴光遺傳抑制"},
+{pid:"a",id:"4C",fig:4,p:12,ty:["flow"],d:"依 EEG／EMG／活動量即時判讀警醒狀態的決策樹",ex:"狀態依賴光遺傳抑制"},
+{pid:"a",id:"4D",fig:4,p:12,ty:["ephys"],d:"狀態依賴抑制的範例紀錄",ex:"狀態依賴光遺傳抑制"},
+{pid:"a",id:"4E",fig:4,p:12,ty:["bar"],d:"各警醒狀態的照光涵蓋時間百分比",ex:"狀態依賴光遺傳抑制"},
+{pid:"a",id:"4F",fig:4,p:12,ty:["bar","heat"],d:"ArchT-EGFP 與 EGFP 對照組的狀態依賴抑制 NOR",ex:"狀態依賴光遺傳抑制"},
+{pid:"a",id:"4G",fig:4,p:12,ty:["line"],d:"狀態依賴抑制對 EEG 頻譜的影響",ex:"狀態依賴光遺傳抑制"},
+// ---- 論文 b：Nature 2024 ----
+{pid:"b",id:"1A",fig:1,p:29,ty:["flow"],d:"實驗流程：PRE → MAZE → 自然睡眠（NS1-NS2）或 5 小時剝奪（SD1-SD2）＋恢復睡眠",ex:"睡眠剝奪"},
+{pid:"b",id:"1B",fig:1,p:29,ty:["heat","ephys"],d:"NSD 與 SD 範例場次的功率譜密度，含 hypnogram 與 CA1 LFP 頻譜圖",ex:"睡眠分期"},
+{pid:"b",id:"1C",fig:1,p:29,ty:["line"],d:"所有 NSD 與 SD/RS 場次的平均功率譜（含 s.e.m. 陰影）",ex:"睡眠分期"},
+{pid:"b",id:"1D",fig:1,p:29,ty:["line"],d:"delta 波速率：SD 低於睡眠，但從 SD1 到 SD2 再到 RS 上升",ex:"睡眠剝奪"},
+{pid:"b",id:"1E",fig:1,p:29,ty:["ephys"],d:"自然睡眠的範例 LFP，SWR 自發率高（兩個 shank）",ex:"SWR 偵測"},
+{pid:"b",id:"1F",fig:1,p:29,ty:["bar"],d:"ripple 發生率的跨區塊比較",ex:"SWR 偵測"},
+{pid:"b",id:"1G",fig:1,p:29,ty:["bar"],d:"ripple 峰值頻率（SD2 170.13 Hz vs NS2 154.87 Hz）",ex:"SWR 偵測"},
+{pid:"b",id:"1H",fig:1,p:29,ty:["bar"],d:"sharp wave 振幅",ex:"SWR 偵測"},
+{pid:"b",id:"1I",fig:1,p:29,ty:["bar"],d:"ripple 功率（z-score）",ex:"SWR 偵測"},
+{pid:"b",id:"2A",fig:2,p:31,ty:["heat"],d:"NSD 與 SD／RS 範例場次的錐體細胞放電率（5 分鐘 bin，依平均排序）與 hypnogram",ex:"長時間電生理記錄"},
+{pid:"b",id:"2B",fig:2,p:31,ty:["bar"],d:"錐體細胞放電率的跨區塊比較",ex:"長時間電生理記錄"},
+{pid:"b",id:"2C",fig:2,p:31,ty:["bar"],d:"中間神經元放電率",ex:"長時間電生理記錄"},
+{pid:"b",id:"2D",fig:2,p:31,ty:["line"],d:"放電率分布的常態性（SD 期間維持偏態）",ex:"長時間電生理記錄"},
+{pid:"b",id:"2E",fig:2,p:31,ty:["bar"],d:"log 放電率的四分位距（SD 期間分布更廣）",ex:"長時間電生理記錄"},
+{pid:"b",id:"2F",fig:2,p:31,ty:["bar"],d:"SWR 內的錐體細胞放電率",ex:"SWR 偵測"},
+{pid:"b",id:"2G",fig:2,p:31,ty:["bar"],d:"SWR 內的中間神經元放電率",ex:"SWR 偵測"},
+{pid:"b",id:"3A",fig:3,p:33,ty:["line"],d:"4 隻動物的 EV 再活化時間曲線（NSD 黑、SD 紅、對照 REV 黃），上方為 hypnogram",ex:"再活化分析"},
+{pid:"b",id:"3B",fig:3,p:33,ty:["line","bar"],d:"只在清醒期與只在 NREM 期分別計算的 EV",ex:"再活化分析"},
+{pid:"b",id:"3C",fig:3,p:33,ty:["bar"],d:"EV 指數衰減的時間常數",ex:"再活化分析"},
+{pid:"b",id:"3D",fig:3,p:33,ty:["bar"],d:"各區塊的再活化量跨組比較",ex:"再活化分析"},
+{pid:"b",id:"4A",fig:4,p:34,ty:["ephys","traj"],d:"跑動期間的 spike raster（依位置野排序）與原始／ripple 濾波 LFP，軌跡位置疊在上面",ex:"軌跡重播分析"},
+{pid:"b",id:"4B",fig:4,p:34,ty:["heat","traj"],d:"NSD 與 SD 的範例軌跡重播（貝氏解碼機率矩陣）",ex:"軌跡重播分析"},
+{pid:"b",id:"4C",fig:4,p:34,ty:["bar"],d:"符合重播判定的事件比例",ex:"軌跡重播分析"},
+{pid:"b",id:"4D",fig:4,p:34,ty:["bar"],d:"軌跡重播的總發生率與持續時間",ex:"軌跡重播分析"}];
+const figsOf=(pid,ex)=>FIGS.filter(f=>f.pid===pid&&(!ex||f.ex===ex));
+
+const DEMO_NOTES={a:[{k:"論文說的",p:4,t:"REM 期抑制才有效，清醒期和 NREM 期抑制都沒效 — 這是他們區分兩群細胞的關鍵證據。"},
+ {k:"我的推論",t:"如果遺忘真的綁在 REM，那任何會改變 REM 比例的操作（藥物、光照）都可能間接影響記憶 — 這是我自己想的，論文沒有說。"}],
+ b:[{k:"論文說的",p:7,t:"恢復睡眠後重播沒有回升（RS 0.016 vs NS1 0.027）。"},
+ {k:"我的推論",t:"兩篇合起來看，REM 可能同時在做遺忘（a）跟鞏固（b 的 NREM replay），所以「睡飽有助記憶」可能是兩股力量的淨結果 — 這是我自己的推論，兩篇都沒有這樣寫。"}]};
+
+const $=s=>document.querySelector(s), app=$("#app");
+let view={t:"shelf",by:"topic"}, notes={};
+try{notes=JSON.parse(localStorage.getItem("pl-notes")||"null")||JSON.parse(JSON.stringify(DEMO_NOTES))}catch(e){notes=JSON.parse(JSON.stringify(DEMO_NOTES))}
+const save=()=>{try{localStorage.setItem("pl-notes",JSON.stringify(notes))}catch(e){}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const src=(id,p,label)=>`<button class="src" data-src="${id}:${p}:${esc(label||"")}">p.${p}</button>`;
+const gap=t=>/未提供/.test(t)?`<span class="gap">${esc(t)}</span>`:esc(t);
+
+function shelves(){
+  const by=view.by, g={};
+  P.forEach(p=>{const k=by==="topic"?p.topic:by==="journal"?p.journal:by==="year"?String(p.year):p.species;(g[k]=g[k]||[]).push(p)});
+  return Object.entries(g);
+}
+function renderShelf(){
+  const segs=[["topic","主題"],["journal","期刊"],["year","年份"],["species","物種"]];
+  app.innerHTML=`
+  <div class="intro">
+    <div><strong>只有你上傳的</strong>書庫裡只有這 2 本。系統不會上網補資料，也不會替沒上傳的參考文獻建書。</div>
+    <div><strong>每格都有頁碼</strong>作者、條件、結果後面的 p.N 可以點，會告訴你這筆資料出現在原文第幾頁。</div>
+    <div><strong>找不到就說找不到</strong>原文沒寫的（像隻數、鼠齡）標成「正文未提供」，不猜、不填。</div>
+    <div><strong>論點分兩色</strong>筆記分「論文說的」和「我的推論」，以後不會再搞混是誰說的。</div>
+  </div>
+  <div class="bar"><span>書架排列依據</span>
+    <div class="seg">${segs.map(([k,n])=>`<button type="button" data-by="${k}" aria-current="${view.by===k}">${n}</button>`).join("")}</div>
+    <span style="margin-left:auto">${P.length} 本書 · ${P.reduce((n,p)=>n+p.exps.length,0)} 個實驗 · ${FIGS.length} 個圖面板 · 全部來自你的 PDF</span></div>
+  ${shelves().map(([k,ps])=>`
+    <div class="shelf"><div class="shelf-head"><h2>${esc(k)}</h2><span>${ps.length} 本</span></div>
+    <div class="shelf-body"><div class="books">${ps.map(p=>`
+      <button class="book" data-open="${p.id}" style="background:${p.color};height:${150+p.exps.length*4}px" title="${esc(p.title)}">
+        <span class="band"></span><span class="t">${esc(p.zh)}</span><span class="y">${p.year}</span></button>`).join("")}
+    </div></div><div class="plank"></div></div>`).join("")}
+  <p class="hint">書的高度對應擷取到的實驗數量，這是為了讓你一眼看出哪本資訊比較多，不代表論文品質。</p>`;
+}
+
+function figBlock(pid,ex){
+  const fs=figsOf(pid,ex);
+  if(!fs.length)return `<p class="hint" style="margin:0">這個實驗在原文裡沒有對應的圖。</p>`;
+  return `<div class="figs"><b>這個實驗的圖（${fs.length}）</b>
+    ${fs.map(f=>`<button class="fig" data-fig="${pid}:${f.id}">
+      <span class="fid">Fig. ${f.id}</span><span class="fd">${esc(f.d)}</span>
+      <span class="fty">${f.ty.map(t=>`<i class="t-${t}">${FT[t]}</i>`).join("")}</span>
+      <span class="fp mono">p.${f.p}</span></button>`).join("")}</div>`;
+}
+
+function renderPaper(id){
+  const p=P.find(x=>x.id===id);
+  const other=P.find(x=>x.id!==id);
+  app.innerHTML=`<button class="back" data-back>← 回書架</button>
+  <div class="paper"><div>
+    <div class="ph">
+      <span class="jtag" style="background:${p.color}">${esc(p.journal)}</span>
+      <h1>${esc(p.title)}</h1>
+      <dl class="meta">
+        <dt>中文題名</dt><dd>${esc(p.zh)}<span class="gap">系統整理，非原文</span></dd>
+        <dt>作者</dt><dd>${p.authors.map((a,i)=>`<button class="au" data-au="${esc(a[0])}"><u>${esc(a[0])}</u>${a[1].map(r=>`<span class="role${r==="通訊作者"?" c":""}">${r}</span>`).join("")}</button>`).join("")}${src(p.id,p.ap,"作者名單")}</dd>
+        <dt>單位</dt><dd>${esc(p.affil)}${src(p.id,p.ap,"作者單位")}</dd>
+        <dt>期刊出處</dt><dd>${esc(p.journal)} ${esc(p.cite)}，${esc(p.date)}${src(p.id,p.jp,"期刊卷期")}</dd>
+        <dt>DOI</dt><dd class="mono">${esc(p.doi)}${src(p.id,p.jp,"DOI")}</dd>
+        <dt>實驗物種</dt><dd>${esc(p.species)}</dd>
+      </dl>
+    </div>
+    <section class="blk"><h2>摘要</h2>
+      <p class="abs">${esc(p.abs)}${src(p.id,1,"摘要")}</p>
+      <p class="hint">${esc(p.absNote)}</p>
+    </section>
+    <section class="blk"><h2>關鍵字</h2>
+      <p class="hint" style="margin-bottom:11px">關鍵字分四層，每一層標清楚是誰給的。層級越上面越接近「作者本人的話」，越下面越是系統或第三方整理的。</p>
+      ${p.kwT.map(t=>`<div class="tier tier-${t.lv}">
+        <div class="tier-h"><span class="lv">${t.lv}</span><b>${esc(t.n)}</b><span class="hint">來源：${esc(t.src)}</span></div>
+        ${t.items.length?`<div class="kws">${t.items.map(k=>`<button class="kw" data-kw="${esc(k.replace(/ [×★].*$/,""))}">${esc(k)}</button>`).join("")}</div>`
+          :`<p class="gap" style="margin:0">${esc(t.none)}</p>`}
+        ${t.note?`<p class="hint" style="margin:7px 0 0">${esc(t.note)}</p>`:""}
+      </div>`).join("")}
+    </section>
+    <section class="blk"><h2>做了哪些實驗（${p.exps.length} 項）</h2>
+      ${p.exps.map(e=>`<div class="exp">
+        <div class="exp-h"><h3>${esc(e.n)}</h3><span class="en">${esc(e.en)}${src(p.id,e.p,e.n+"：方法")}</span></div>
+        <div class="exp-b">
+          <div class="ani">${e.ani.map(([k,v])=>`<span><b>${esc(k)}</b>${gap(v)}</span>`).join("")}</div>
+          <table class="cond"><tbody>${e.cond.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${gap(v)}</td></tr>`).join("")}</tbody></table>
+          <div class="res"><b>結果</b>${esc(e.res)}${src(p.id,e.rp,e.n+"：結果")}</div>
+          ${figBlock(p.id,e.n)}
+        </div></div>`).join("")}
+    </section>
+    <section class="blk"><h2>討論</h2><p class="abs">${esc(p.disc)}${src(p.id,p.dp,"討論")}</p></section>
+    <section class="blk"><h2>參考文獻</h2>
+      <div class="stats">
+        <div><b>${p.refStat.total}</b><span>原文條數</span></div>
+        <div><b>${p.refStat.parsed}</b><span>成功拆出</span></div>
+        <div><b>${p.refStat.pmid}</b><span>有 PMID</span></div>
+        <div><b>${p.refStat.fail.length}</b><span>擷取失敗</span></div>
+      </div>
+      <p style="font-size:14px;margin:12px 0 0">引用格式：<b>${esc(p.refStat.style)}</b>
+        <span class="${p.refStat.ok?"tagin":"gap"}">${p.refStat.ok?"引用位置可靠":"引用位置僅供參考"}</span></p>
+      <p class="hint">${esc(p.refStat.styleNote)}</p>
+      <p style="margin:13px 0 0"><button class="btn" data-refs="${p.id}" type="button">看完整分析：誰被引用最多次、在哪裡被引用 →</button></p>
+      <p class="hint">${esc(p.refNote)}</p>
+    </section>
+  </div>
+  <aside class="side">
+    <div class="panel"><h3>我的筆記</h3>
+      ${(notes[p.id]||[]).map((n,i)=>`<div class="note${n.k==="我的推論"?" mine":""}"><span class="k">${esc(n.k)}${n.p?` · 原文 p.${n.p}`:" · 無出處"}</span>${esc(n.t)}</div>`).join("")||'<p class="hint">還沒有筆記。</p>'}
+      <form class="nf" id="nf"><textarea id="nt" placeholder="寫下來…"></textarea>
+        <div class="row"><select id="nk"><option>論文說的</option><option>我的推論</option></select>
+        <input id="np" type="number" min="1" placeholder="頁碼"><button class="btn" type="submit">加入</button></div>
+        <p class="hint">選「論文說的」就要填頁碼。「我的推論」不用填，但會一直用紫色標著，提醒你那不是論文寫的。</p>
+      </form></div>
+    <div class="panel"><h3>同書庫的另一本</h3>
+      <button class="prow" data-open="${other.id}"><span class="st" style="background:${other.color}"></span>
+      <span><h3>${esc(other.zh)}</h3><p>${esc(other.journal)} ${other.year} · ${esc(other.species)} · ${other.exps.length} 個實驗</p></span></button>
+      <p class="hint" style="margin-top:9px">兩本都有做「睡眠剝奪」。搜尋列輸入 <b>sleep deprivation</b> 可以並排比較兩邊的條件。</p></div>
+  </aside></div>`;
+  const f=$("#nf");
+  f.addEventListener("submit",ev=>{ev.preventDefault();
+    const t=$("#nt").value.trim(),k=$("#nk").value,pg=$("#np").value.trim();
+    if(!t)return;
+    if(k==="論文說的"&&!pg){alert("「論文說的」要填頁碼，才知道這句話出自原文哪一頁。");return}
+    (notes[p.id]=notes[p.id]||[]).push({k,t,p:pg||null});save();renderPaper(p.id)});
+}
+
+function matches(p,q,scope){
+  const hit=[];
+  const add=(where,text,page)=>{if(text&&String(text).toLowerCase().includes(q))hit.push({where,text,page})};
+  if(scope==="all"||scope==="exp")p.exps.forEach(e=>{if((e.n+" "+e.en).toLowerCase().includes(q))hit.push({where:"實驗",text:e.n,page:e.p,exp:e})});
+  if(scope==="all"||scope==="cond")p.exps.forEach(e=>e.cond.forEach(([k,v])=>{if((k+" "+v).toLowerCase().includes(q))hit.push({where:"條件",text:k+"："+v,page:e.p,exp:e})}));
+  if(scope==="all"||scope==="author"){p.authors.forEach(a=>add("作者",a[0],p.ap));p.topCited.forEach(r=>add("參考文獻",r.t,null))}
+  if(scope==="all"||scope==="journal")add("期刊",p.journal+" "+p.cite,p.jp);
+  if(scope==="all"||scope==="kw")p.kws.forEach(k=>add("關鍵字",k,1));
+  if(scope==="all"||scope==="fig")figsOf(p.id).forEach(f=>{
+    const hay=(f.id+" Fig."+f.id+" "+f.d+" "+f.ex+" "+f.ty.map(t=>FT[t]).join(" ")).toLowerCase();
+    const nm=s=>s.replace(/[.\s]/g,"");
+    if(hay.includes(q)||nm(hay).includes(nm(q))){const e=p.exps.find(x=>x.n===f.ex);hit.push({where:"圖",text:"Fig. "+f.id+"："+f.d,page:f.p,exp:e})}});
+  if(scope==="all"){add("標題",p.title,1);add("摘要",p.abs,1);add("討論",p.disc,p.dp)}
+  return hit;
+}
+function renderSearch(q0,scope){
+  const q=q0.toLowerCase().trim();
+  const found=P.map(p=>({p,hit:matches(p,q,scope)})).filter(x=>x.hit.length);
+  const expMatch=found.map(({p,hit})=>({p,exps:[...new Set(hit.filter(h=>h.exp).map(h=>h.exp))]})).filter(x=>x.exps.length);
+  app.innerHTML=`<button class="back" data-back>← 回書架</button>
+  <div class="rh"><span class="hint">在你上傳的 2 篇論文裡搜尋</span><h1>「${esc(q0)}」${found.length?`：${found.length} 本書命中`:"：沒有命中"}</h1></div>
+  ${!found.length?`<div class="empty">書庫裡的 2 篇論文都沒有出現這個詞。<br>系統不會去網路上找別的論文來補。</div>`:""}
+  ${expMatch.length?`<h2 style="font-size:16px;margin-bottom:9px">實驗條件並排比較</h2>
+  <div class="tw"><table class="cmp"><thead><tr><th>論文</th><th>實驗</th><th>動物／樣本數</th><th>條件設定</th><th>結果</th><th>圖</th></tr></thead><tbody>
+  ${expMatch.flatMap(({p,exps})=>exps.map(e=>{const fs=figsOf(p.id,e.n);return `<tr>
+    <td><button class="prow" style="border:0;padding:0;background:none;display:block" data-open="${p.id}"><span><h3 style="font-size:13.5px">${esc(p.zh)}</h3><p>${esc(p.journal)} ${p.year}</p></span></button></td>
+    <td>${esc(e.n)}<br><span class="hint">${esc(e.en)}</span><br>${src(p.id,e.p,e.n+"：方法")}</td>
+    <td>${e.ani.map(([k,v])=>`${esc(k)}：${gap(v)}`).join("<br>")}</td>
+    <td><ul>${e.cond.map(([k,v])=>`<li>${esc(k)}：${gap(v)}</li>`).join("")}</ul></td>
+    <td>${esc(e.res)}<br>${src(p.id,e.rp,e.n+"：結果")}</td>
+    <td>${fs.length?fs.map(f=>`<button class="src" data-fig="${p.id}:${f.id}" style="margin:0 0 4px;display:block">Fig. ${f.id}</button>`).join(""):`<span class="gap">無對應圖</span>`}</td></tr>`})).join("")}
+  </tbody></table></div>
+  <p class="hint" style="margin:-10px 0 24px">每一列的條件都只來自那一篇自己的 PDF，不會互相補齊。空白或「正文未提供」就是原文真的沒寫。點 Fig. 可以看那張圖對應的實驗、類型和頁碼；點 p.N 回到原文位置。</p>`:""}
+  ${found.length?`<h2 style="font-size:16px;margin-bottom:9px">命中的書</h2><div class="plist">
+  ${found.map(({p,hit})=>`<button class="prow" data-open="${p.id}"><span class="st" style="background:${p.color}"></span>
+    <span><h3>${esc(p.zh)}</h3><p>${esc(p.journal)} ${p.year} · ${esc(p.species)} · 命中 ${hit.length} 處</p>
+    <p style="margin-top:5px;color:var(--ink)">${hit.slice(0,3).map(h=>`<mark>${esc(h.where)}</mark> ${esc(h.text.slice(0,90))}${h.page?` <span class="mono" style="color:var(--muted)">p.${h.page}</span>`:""}`).join("<br>")}</p></span></button>`).join("")}
+  </div>`:""}`;
+}
+
+function renderRefs(id){
+  const p=P.find(x=>x.id===id),o=P.find(x=>x.id!==id);
+  app.innerHTML=`<button class="back" data-back>← 回書架</button>
+  <div class="rh"><span class="hint">${esc(p.journal)} ${p.year} · 參考文獻分析</span><h1>${esc(p.zh)}</h1></div>
+  <div class="stats" style="margin-bottom:16px">
+    <div><b>${p.refStat.total}</b><span>原文條數</span></div>
+    <div><b>${p.refStat.parsed}</b><span>成功拆出</span></div>
+    <div><b>${p.refStat.pmid}</b><span>有 PMID</span></div>
+    <div><b>${p.refStat.total-p.refStat.pmid}</b><span>沒 PMID</span></div>
+    <div><b>${p.refStat.fail.length}</b><span>擷取失敗</span></div>
+  </div>
+  <div class="verdict"><h3>擷取失敗的有哪幾條</h3>
+    <p style="margin:0 0 7px;font-size:14px">第 ${p.refStat.fail.join("、")} 條沒有拆出來。原因都一樣：<b>這幾條剛好跨頁，作者名字被切在上一頁的欄位邊緣，抽文字時整段掉了。</b></p>
+    ${id==="a"?`<p style="margin:0;font-size:14px">例如第 29 條，PDF 裡只剩下半句和期刊資訊（Science 265:679–682, 1994, PMID 8036518），作者是誰完全讀不到。系統的處理是：<b>把讀到的留著，讀不到的留白</b>，不去猜作者是誰。</p>`
+      :`<p style="margin:0;font-size:14px">處理方式一樣：讀到多少留多少，缺的留白。這 6 條在列表上會標成「未完整擷取」，提醒你要自己回去看原文。</p>`}
+  </div>
+  <h2 style="font-size:17px;margin-bottom:5px">被引用最多次的</h2>
+  <p class="hint" style="margin:0 0 12px">次數是數內文裡出現幾次引用標記，不是數參考文獻清單。被引用越多次、或者出現在 Methods 裡，通常代表這條對這篇越關鍵。</p>
+  ${p.refStat.ok?"":`<p class="gap" style="display:block;padding:9px 12px;margin-bottom:12px">這篇是上標格式，次數只能保守估計。系統實際抓到 64 處引用標記，一定有漏掉的 —— 但漏掉比抓錯好。真正的解法在下面說明。</p>`}
+  ${p.topCited.map(r=>`<div class="cited">
+    <div class="top"><span class="cnt">#${r.n} · 被引 ${r.c} 次</span><span class="hint">出現在 p.${r.pg.join("、p.")}</span>
+      ${r.pmid?`<a class="pmlink" href="https://pubmed.ncbi.nlm.nih.gov/${r.pmid}/" target="_blank" rel="noopener" style="color:var(--accent);font-family:var(--f-mono);font-size:12.5px;margin-left:auto">PMID ${r.pmid} ↗</a>`:`<span class="hint" style="margin-left:auto">原文未附 PMID</span>`}</div>
+    <div class="ttl">${esc(r.t)}</div>
+    <b style="font-size:12px;color:var(--muted);font-weight:500">在哪裡被引用</b>
+    <ul>${r.why.map(w=>`<li>${esc(w)}</li>`).join("")}</ul>
+    ${r.note?`<p class="hint" style="margin:8px 0 0">${esc(r.note)}</p>`:""}
+  </div>`).join("")}
+  <div class="verdict" style="margin-top:18px"><h3>和《${esc(o.zh)}》的共同引用</h3>
+    <p style="margin:0 0 9px;font-size:14px"><b>比對結果：0 條。</b></p>
+    <p style="margin:0 0 9px;font-size:14px">比對方法用了兩種，兩種都沒有命中：</p>
+    <ul style="margin:0 0 9px;padding-left:18px;font-size:14px">
+      <li><b>PMID 比對</b> —— 這本有 PMID 的 ${p.refStat.pmid} 條，對上另一本的 ${o.refStat.pmid} 條，交集是空的。</li>
+      <li><b>標題詞彙比對</b> —— 沒 PMID 的那些，拿標題的長詞去比，門檻設 6 個共同詞，也沒有任何一對達標。</li>
+    </ul>
+    <p style="margin:0;font-size:14px">最接近的是一組<b>同姓不同篇</b>：這本引 Grosmark 2012（Neuron），另一本引 Grosmark 2015（Nat Neurosci）。系統沒有把它們當成同一條 —— 作者相同不代表論文相同，這種地方一合併就全錯了。</p>
+  </div>
+  <p class="hint">兩篇都在做睡眠與記憶，卻一條共同引用都沒有。這本身就是有用的資訊：它們屬於兩個相鄰但分開的文獻圈。等你丟到十幾篇，這張共同引用表才會開始密起來。</p>
+  <p style="margin-top:14px"><button class="btn" data-refs="${o.id}" type="button">看另一本的參考文獻分析 →</button></p>`;
+}
+
+function renderFigs(ty){
+  const list=ty?FIGS.filter(f=>f.ty.includes(ty)):FIGS;
+  const counts={};FIGS.forEach(f=>f.ty.forEach(t=>counts[t]=(counts[t]||0)+1));
+  const byPaper={};list.forEach(f=>{(byPaper[f.pid]=byPaper[f.pid]||{});(byPaper[f.pid][f.fig]=byPaper[f.pid][f.fig]||[]).push(f)});
+  app.innerHTML=`<button class="back" data-back>← 回書架</button>
+  <div class="rh"><span class="hint">${FIGS.length} 個圖面板，全部來自你上傳的兩個 PDF</span><h1>圖目錄</h1></div>
+  <p class="hint" style="margin:0 0 12px">圖的<b>類型</b>是系統從圖說文字判讀的（看到「histochemical confirmation」判成顯微鏡圖，看到「bar graph」判成長條圖），所以類型可能判錯 —— 但<b>圖號和頁碼是原文印的，不會錯</b>。點任何一個圖可以看它對應哪個實驗、在第幾頁。</p>
+  <div class="figfilter">
+    <button type="button" data-ty="" aria-current="${!ty}">全部 ${FIGS.length}</button>
+    ${Object.keys(FT).map(t=>counts[t]?`<button type="button" data-ty="${t}" aria-current="${ty===t}">${FT[t]} ${counts[t]}</button>`:`<button type="button" data-ty="${t}" aria-current="false" disabled style="opacity:.45">${FT[t]} 0</button>`).join("")}
+  </div>
+  ${ty==="wb"?`<div class="empty" style="margin-bottom:18px">你這兩篇都沒有西方墨點法，所以這一類是空的。<br>系統不會因為「生物論文通常有 WB」就生一個出來。</div>`:""}
+  ${P.map(p=>{const g=byPaper[p.id];if(!g)return "";
+    return `<div class="figgrp"><h3><span class="jtag" style="background:${p.color};margin-right:7px">${esc(p.journal)} ${p.year}</span>${esc(p.zh)}</h3>
+    <p class="hint">${Object.values(g).flat().length} 個面板符合</p>
+    ${Object.keys(g).sort().map(fn=>`<div class="figbox"><p class="hint" style="margin:9px 0 2px">Fig. ${fn}　原文第 ${g[fn][0].p} 頁</p>
+      ${g[fn].map(f=>`<button class="fig" data-fig="${p.id}:${f.id}">
+        <span class="fid">Fig. ${f.id}</span><span class="fd">${esc(f.d)}</span>
+        <span class="fty">${f.ty.map(t=>`<i class="t-${t}">${FT[t]}</i>`).join("")}</span>
+        <span class="fp mono">${esc(f.ex)}</span></button>`).join("")}
+    </div>`).join("")}</div>`}).join("")}
+  ${!list.length?`<div class="empty">沒有這一類的圖。</div>`:""}`;
+}
+
+function renderPubmed(){
+  app.innerHTML=`<button class="back" data-back>← 回書架</button>
+  <div class="rh"><span class="hint">書庫裡沒有的時候，才連出去</span><h1>PubMed 查詢</h1></div>
+  <div class="verdict"><h3>規矩</h3>
+    <ul style="margin:0;padding-left:18px;font-size:14px">
+      <li>PubMed 回什麼就顯示什麼，<b>不補、不改、不潤飾</b>。</li>
+      <li>每一筆都附 PMID 連結，你可以自己點過去核對。</li>
+      <li>每一筆都要說明<b>為什麼找到它</b> —— 是哪個查詢字串、怎麼翻譯的。</li>
+      <li>查到的東西<b>不會自動變成書</b>。要變成書，你得自己去下載 PDF 丟進來。沒有全文就沒有實驗條件可以抓。</li>
+    </ul></div>
+
+  <h2 style="font-size:17px;margin-bottom:4px">實測一：用參考文獻的 PMID 去核對</h2>
+  <p class="hint" style="margin:0 0 11px">查詢：<span class="mono">esummary.fcgi?db=pubmed&id=22998869</span>　這是《MCH 神經元與遺忘》第 28 條參考文獻上印的 PMID。</p>
+  <div class="pmrow"><div>
+    <h3>REM sleep reorganizes hippocampal excitability.</h3>
+    <p class="j">Grosmark AD, Mizuseki K, Pastalkova E, <b>Diba K</b>, Buzsáki G · Neuron 75:1001-7 · 2012 Sep 20 · doi:10.1016/j.neuron.2012.08.015</p>
+    <p class="why"><b>為什麼找到它：</b>你書庫裡那篇的參考文獻清單上就印著這個 PMID，系統拿它直接查，不是用猜的。查回來的作者名單和 PDF 上印的完全一致 —— 代表擷取沒出錯。順帶確認了 Diba K 真的在作者列裡，<b>這就是兩本書之間那條線的證據</b>。</p>
+  </div><a href="https://pubmed.ncbi.nlm.nih.gov/22998869/" target="_blank" rel="noopener">PMID 22998869 ↗</a></div>
+
+  <h2 style="font-size:17px;margin:22px 0 4px">實測二：找書庫裡沒有的論文</h2>
+  <p class="hint" style="margin:0 0 7px">查詢：<span class="mono">"melanin-concentrating hormone" AND hippocampus AND memory</span></p>
+  <p class="hint" style="margin:0 0 11px">PubMed 把它翻譯成：<span class="mono" style="font-size:11.5px">"melanin-concentrating hormone"[All Fields] AND ("hippocampus"[MeSH Terms] OR "hippocampus"[All Fields]) AND ("memories"[All Fields] OR "memory"[MeSH Terms] OR ...)</span>　共 <b>27 筆</b>，以下是相關度排序前 5。</p>
+  ${[
+    {p:"42707409",t:"Tracing melanin-concentrating hormone function: decades of memory research and emerging links to Alzheimer's disease.",j:"Niño-Rivero S, Blanco E, Rodríguez-Canclini V, … Galeano P · Front Neurosci 20:1918594 · 2026 · doi:10.3389/fnins.2026.1918594",
+     w:"綜述，主題同時命中 MCH、記憶、海馬迴三個詞。這是 5 筆裡最值得你去看的 —— 它會把這條線的歷史整理好。<b>不在你的書庫裡。</b>"},
+    {p:"34980924",t:"Hypothalamic melanin-concentrating hormone regulates hippocampus-dorsolateral septum activity.",j:"Liu JJ, Tsien RW, Pang ZP · Nat Neurosci 25:61-71 · 2022 Jan · doi:10.1038/s41593-021-00984-5",
+     w:"命中 MCH + 海馬迴。主題是 MCH 對海馬－外側隔區迴路的調節，和你那篇講的「MCH 末梢經 GABA 中間神經元抑制 CA1」是同一條機制線。<b>不在你的書庫裡。</b>"},
+    {p:"36565982",t:"Acute intrahippocampal administration of melanin-concentrating hormone impairs memory consolidation and decreases the expression of MCHR-1 and TrkB receptors.",j:"Ruiz-Viroga V, de Ceglia M, Morelli L, … Lagos P · Prog Neuropsychopharmacol Biol Psychiatry 123:110703 · 2023 Apr 20 · doi:10.1016/j.pnpbp.2022.110703",
+     w:"三個詞全中。直接把 MCH 打進海馬迴會損害記憶鞏固 —— 和你那篇用光遺傳得到的結論方向一致，但手法不同。<b>不在你的書庫裡。</b>"},
+    {p:"31183806",t:"Nasal Cavity Administration of Melanin-Concentrating Hormone Improves Memory Impairment in Memory-Impaired and Alzheimer's Disease Mouse Models.",j:"Oh ST, Liu QF, Jeong HJ, … Jeon S · Mol Neurobiol 56:8076-8086 · 2019 Dec · doi:10.1007/s12035-019-01662-1",
+     w:"命中三個詞，但結論方向相反（給 MCH 反而改善記憶）。<b>這種相反的結果系統不會幫你藏起來</b>，也不會幫你解釋，留給你自己判斷。<b>不在你的書庫裡。</b>"},
+    {p:"39119926",t:"Central Role of Hypothalamic Circuits for Acupuncture's Anti-Parkinsonian Effects.",j:"Oh JY, Lee H, Jang SY, … Park HJ · Adv Sci (Weinh) 11:e2403245 · 2024 Nov · doi:10.1002/advs.202403245",
+     w:"主題是針灸與帕金森氏症，和你要找的沒什麼關係。<b>這筆我照樣列出來</b>，因為它確實出現在 PubMed 相關度排序的前 5 名 —— 把雜訊藏起來，你就不知道這個查詢其實不夠準。"}
+  ].map(r=>`<div class="pmrow"><div><h3>${esc(r.t)}</h3><p class="j">${esc(r.j)}</p>
+    <p class="why"><b>為什麼找到它：</b>${r.w}</p></div>
+    <a href="https://pubmed.ncbi.nlm.nih.gov/${r.p}/" target="_blank" rel="noopener">PMID ${r.p} ↗</a></div>`).join("")}
+  <p class="hint">注意一件事：這 5 筆裡<b>沒有你書庫裡那篇</b>。PubMed 的相關度排序跟你的書庫沒有關係，它不知道你讀過什麼。</p>
+
+  <h2 style="font-size:17px;margin:22px 0 4px">實測三：查到的剛好已經在書架上</h2>
+  <p class="hint" style="margin:0 0 11px">查詢：<span class="mono">Izawa S[au] AND melanin-concentrating AND forgetting</span>　共 1 筆。</p>
+  <div class="pmrow have"><div><h3>REM sleep-active MCH neurons are involved in forgetting hippocampus-dependent memories.</h3>
+    <p class="j">Science · 2019 · PMID 31604241</p>
+    <p class="why"><b>這本你已經有了。</b>系統比對 DOI 和 PMID 之後認出來，所以不會叫你再下載一次，直接給你書架上的連結。</p>
+    <p style="margin-top:8px"><button class="btn" data-open="a" type="button">翻到這本書 →</button></p></div>
+    <a href="https://pubmed.ncbi.nlm.nih.gov/31604241/" target="_blank" rel="noopener">PMID 31604241 ↗</a></div>
+
+  <h2 style="font-size:17px;margin:22px 0 4px">實測四：同一份研究有兩筆紀錄</h2>
+  <p class="hint" style="margin:0 0 11px">查詢：<span class="mono">"Sleep loss diminishes hippocampal reactivation and replay"</span>　共 <b>2 筆</b>。</p>
+  <div class="pmrow have"><div><h3>Sleep loss diminishes hippocampal reactivation and replay.</h3>
+    <p class="j">Nature 630:935-942 · 2024 Jun · doi:10.1038/s41586-024-07538-2 · 正式版</p>
+    <p class="why"><b>這本你已經有了</b>，就是書架上那本 Nature 2024。</p></div>
+    <a href="https://pubmed.ncbi.nlm.nih.gov/38867049/" target="_blank" rel="noopener">PMID 38867049 ↗</a></div>
+  <div class="pmrow"><div><h3>Sleep loss diminishes hippocampal reactivation and replay.</h3>
+    <p class="j">Res Sq · 2023 Feb 16 · doi:10.21203/rs.3.rs-2540186/v1 · <b>Preprint（預印本）</b></p>
+    <p class="why"><b>為什麼找到它：</b>標題一模一樣。PubMed 的 pubtype 標成 Preprint，所以系統判定這是同一份研究的預印本，會把它掛在那本書底下、標成「預印本版本」，而<b>不會另外開一本新書</b>。<br>
+    這點很重要：預印本和正式版的數字常常不一樣（審稿後補實驗、改分析）。如果你引用到預印本的數字，審稿人會抓出來。所以系統只提醒你有這個版本存在，不會把兩邊的數據混在一起。</p></div>
+    <a href="https://pubmed.ncbi.nlm.nih.gov/36824950/" target="_blank" rel="noopener">PMID 36824950 ↗</a></div>
+
+  <div class="verdict" style="margin-top:22px"><h3>PubMed 給得了什麼、給不了什麼</h3>
+    <table class="cmp" style="min-width:0"><tbody>
+      <tr><td style="width:46%">標題、作者、期刊、年份、DOI</td><td><span class="tagin">給得了</span></td></tr>
+      <tr><td>摘要全文</td><td><span class="tagin">給得了</span></td></tr>
+      <tr><td>MeSH 標引詞（人工標的主題詞）</td><td><span class="tagin">給得了</span></td></tr>
+      <tr><td>有沒有預印本版本、有沒有被撤稿</td><td><span class="tagin">給得了</span></td></tr>
+      <tr><td>這篇做了哪些實驗、n 是多少、鼠齡多少</td><td><span class="gap">給不了</span></td></tr>
+      <tr><td>實驗條件、統計數字、圖表</td><td><span class="gap">給不了</span></td></tr>
+      <tr><td>它引用了哪些論文</td><td><span class="gap">PubMed 本身沒有</span></td></tr>
+    </tbody></table>
+    <p style="margin:11px 0 0;font-size:14px">所以 PubMed 的角色很清楚：<b>它是用來「找到」和「核對」的，不是用來「讀」的。</b>書架上那些能點進去看條件的書，永遠只能來自你自己丟上來的 PDF。</p>
+  </div>`;
+}
+
+function renderGraph(){
+  app.innerHTML=`<button class="back" data-back>← 回書架</button>
+  <div class="rh"><span class="hint">只畫書庫內查得到的連結</span><h1>引用關聯圖</h1></div>
+  <div class="gw"><svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="兩篇論文的關聯圖">
+    <line x1="170" y1="110" x2="530" y2="110" stroke="var(--line)" stroke-width="2" stroke-dasharray="6 5"></line>
+    <text x="350" y="100" text-anchor="middle" fill="var(--muted)" class="lbl">沒有互相引用</text>
+    <path d="M170 130 Q350 225 530 130" fill="none" stroke="var(--accent)" stroke-width="2"></path>
+    <text x="350" y="240" text-anchor="middle" fill="var(--accent)" class="lbl">作者關聯：Diba K</text>
+    <text x="350" y="258" text-anchor="middle" fill="var(--muted)" class="lbl">是左邊參考文獻 #31 的共同作者，也是右邊的通訊作者</text>
+    <g class="gn" data-open="a" tabindex="0"><circle cx="170" cy="110" r="46" fill="var(--sci)"></circle>
+      <text x="170" y="106" text-anchor="middle" fill="#fff">Science</text>
+      <text x="170" y="122" text-anchor="middle" fill="#fff">2019</text>
+      <text x="170" y="178" text-anchor="middle" class="lbl" fill="var(--ink)">MCH 神經元與遺忘</text></g>
+    <g class="gn" data-open="b" tabindex="0"><circle cx="530" cy="110" r="46" fill="var(--nat)"></circle>
+      <text x="530" y="106" text-anchor="middle" fill="#fff">Nature</text>
+      <text x="530" y="122" text-anchor="middle" fill="#fff">2024</text>
+      <text x="530" y="178" text-anchor="middle" class="lbl" fill="var(--ink)">睡眠不足與重播</text></g>
+    <text x="350" y="40" text-anchor="middle" class="lbl" fill="var(--muted)">書庫裡只有 2 本書，所以圖上只有 2 個點</text>
+  </svg></div>
+  <div class="panel"><h3>這張圖為什麼這麼空</h3>
+  <p style="margin:0 0 9px;font-size:14px">因為它只畫查得到的東西。兩篇的參考文獻（31 條與 76 條）都不在你的書庫裡，所以系統不會替它們畫點 — 那些只是書目字串，不是你讀過、能點進去看條件的論文。</p>
+  <p style="margin:0 0 11px;font-size:14px">等你再丟十幾篇進來，共同引用的那幾篇會自己變成書，線也會自己連起來。在那之前，空就是空。</p>
+  <p style="margin:0"><button class="btn" data-refs="a" type="button">看共同引用是怎麼比對的 →</button></p></div>`;
+}
+
+function render(){
+  if(view.t==="shelf")renderShelf();
+  else if(view.t==="paper")renderPaper(view.id);
+  else if(view.t==="search")renderSearch(view.q,view.scope);
+  else if(view.t==="refs")renderRefs(view.id);
+  else if(view.t==="figs")renderFigs(view.ty);
+  else if(view.t==="pubmed")renderPubmed();
+  else renderGraph();
+  window.scrollTo(0,0);
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-by]");if(b){view.by=b.dataset.by;render();return}
+  const fg=e.target.closest("[data-fig]");if(fg){showFig(fg.dataset.fig);return}
+  const ft=e.target.closest("[data-ty]");if(ft){view={t:"figs",ty:ft.dataset.ty,by:view.by};render();return}
+  const rf=e.target.closest("[data-refs]");if(rf){view={t:"refs",id:rf.dataset.refs,by:view.by};render();return}
+  const o=e.target.closest("[data-open]");if(o){view={t:"paper",id:o.dataset.open,by:view.by};render();return}
+  if(e.target.closest("[data-back]")){view={t:"shelf",by:view.by};render();return}
+  const au=e.target.closest("[data-au]");if(au){$("#scope").value="author";$("#q").value=au.dataset.au;view={t:"search",q:au.dataset.au,scope:"author",by:view.by};render();return}
+  const kw=e.target.closest("[data-kw]");if(kw){$("#scope").value="kw";$("#q").value=kw.dataset.kw;view={t:"search",q:kw.dataset.kw,scope:"kw",by:view.by};render();return}
+  const s=e.target.closest("[data-src]");if(s){showSrc(s.dataset.src);return}
+  if(e.target.closest("#ov")&&!e.target.closest("#md"))$("#ov").hidden=true;
+  if(e.target.closest("[data-close]"))$("#ov").hidden=true;
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape")$("#ov").hidden=true;
+  const g=e.target.closest&&e.target.closest(".gn");
+  if(g&&(e.key==="Enter"||e.key===" ")){e.preventDefault();view={t:"paper",id:g.dataset.open,by:view.by};render()}
+});
+function showFig(d){
+  const [pid,fid]=d.split(":");const f=FIGS.find(x=>x.pid===pid&&x.id===fid);const p=P.find(x=>x.id===pid);
+  const e=p.exps.find(x=>x.n===f.ex);
+  $("#md").innerHTML=`<h2>Fig. ${esc(f.id)}</h2>
+  <span class="pg">${esc(p.journal)} ${p.year} · 圖說在原文第 ${f.p} 頁</span>
+  <div class="box">${esc(f.d)}</div>
+  <p style="font-size:14px;margin:0 0 4px"><b>圖的類型</b>（系統從圖說判讀）</p>
+  <div class="fty" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">${f.ty.map(t=>`<i class="t-${t}" style="font-style:normal;font-size:12px;border-radius:3px;padding:2px 8px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)">${FT[t]}</i>`).join("")}</div>
+  <p style="font-size:14px;margin:0 0 4px"><b>屬於哪個實驗</b></p>
+  <p style="font-size:14px;margin:0 0 12px">${esc(f.ex)}${e?`　<span class="hint">${esc(e.en)}</span>`:""}</p>
+  ${e?`<p style="font-size:14px;margin:0 0 4px"><b>這個實驗的條件</b></p>
+  <table class="cond" style="margin-bottom:12px"><tbody>${e.cond.slice(0,4).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${gap(v)}</td></tr>`).join("")}</tbody></table>`:""}
+  <p class="hint">示範版只到這裡：圖號、頁碼、類型、對應的實驗和條件。<b>正式版會把 PDF 第 ${f.p} 頁的這個面板裁出來顯示在這裡</b>，你不用開 PDF 就能看到那張螢光圖或那條 band 長什麼樣，旁邊就是條件表。</p>
+  <div class="actions"><button class="btn g" data-close type="button">關閉</button>
+    <button class="btn" data-open="${pid}" type="button">翻到這本書</button></div>`;
+  $("#ov").hidden=false;
+}
+function showSrc(d){
+  const [id,p,label]=d.split(":");const paper=P.find(x=>x.id===id);
+  $("#md").innerHTML=`<h2>${esc(label||"這筆資料")}</h2>
+  <span class="pg">${esc(paper.journal)} ${paper.year} · 原文第 ${p} 頁</span>
+  <div class="box">系統是從這份 PDF 的第 ${p} 頁讀到這筆資料的。沒有改寫數字，也沒有從別的地方補。</div>
+  <p class="hint">示範版只標到頁碼。正式版會直接把 PDF 翻到這一頁、把對應的那幾行反白起來，讓你一秒確認系統有沒有讀錯 — 因為擷取一定會有讀錯的時候，你要能馬上抓到。</p>
+  <div class="actions"><button class="btn g" data-close type="button">知道了</button></div>`;
+  $("#ov").hidden=false;
+}
+$("#sf").addEventListener("submit",e=>{e.preventDefault();const q=$("#q").value.trim();if(!q)return;view={t:"search",q,scope:$("#scope").value,by:view.by};render()});
+$("#gbtn").addEventListener("click",()=>{view={t:"graph",by:view.by};render()});
+$("#pbtn").addEventListener("click",()=>{view={t:"pubmed",by:view.by};render()});
+$("#fbtn").addEventListener("click",()=>{view={t:"figs",ty:"",by:view.by};render()});
+$("#brand").addEventListener("click",()=>{view={t:"shelf",by:view.by};render()});
+render();
+</script>
+</body>
+</html>
